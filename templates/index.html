@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Extraction Tool</title>
+</head>
+<body>
+    <form action="/extract-colors/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" required>
+        <input type="number" name="n_colors" value="3" min="1" max="10">
+        <button type="submit">Extract Colors</button>
+    </form>
+</body>
+</html>

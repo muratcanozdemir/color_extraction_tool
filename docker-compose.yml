@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - minio
+    environment:
+      - MINIO_URL=minio:9000
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+    command: gunicorn -w 4 -k uvicorn.workers.UvicornWorker -t 300 -b 0.0.0.0:8000 app.main:app
+
+  worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - minio
+      - redis
+    environment:
+      - MINIO_URL=minio:9000
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+    command: celery -A tasks.tasks worker --loglevel=info
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    environment:
+      - MINIO_ROOT_USER=minio
+      - MINIO_ROOT_PASSWORD=minio123
+    command: server /data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 4
+
+  redis:
+    image: "redis:alpine"
+    privileged: true
+    command: ["sh", "-c", "sysctl -w vm.overcommit_memory=1 && redis-server"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+volumes:
+  data:
+    driver: local
